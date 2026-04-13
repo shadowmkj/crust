@@ -1,9 +1,9 @@
+use bollard::Docker;
 use bollard::container::{
     AttachContainerOptions, AttachContainerResults, Config, CreateContainerOptions,
     RemoveContainerOptions, StartContainerOptions,
 };
 use bollard::models::HostConfig;
-use bollard::Docker;
 use futures_util::StreamExt;
 use tokio::io::AsyncWriteExt;
 
@@ -22,7 +22,6 @@ pub async fn execute_submission(
     method_name: &str,
     driver_dir_override: Option<&str>,
 ) -> Result<Verdict, Box<dyn std::error::Error>> {
-    let container_name = format!("exec_{}", test_case.id);
 
     // 1. Resolve language-specific container configuration
     let current_dir = std::env::current_dir()?;
@@ -37,14 +36,19 @@ pub async fn execute_submission(
             ("python:3.9-slim", "src/python_driver", cmd)
         }
         Language::Java => {
-            let cmd = vec![
-                "java".to_string(),
-                "-cp".to_string(),
-                ".:lib/*".to_string(),
-                "Driver".to_string(),
-                method_name.to_string(),
-            ];
-            ("openjdk:17-slim", "src/java_driver", cmd)
+            // Java needs two steps: compile (javac) then run (java).
+            // The driver directory is mounted read-only at /app, so we copy
+            // sources to a writable /work directory, compile there, then run.
+            let shell_cmd = format!(
+                "mkdir -p /work && \
+                 cp /app/*.java /work/ && cp -r /app/lib /work/ && \
+                 cd /work && \
+                 javac -cp '.:lib/*' Driver.java Solution.java && \
+                 java -cp '.:lib/*' Driver {}",
+                method_name
+            );
+            let cmd = vec!["sh".to_string(), "-c".to_string(), shell_cmd];
+            ("openjdk:27-ea-slim", "src/java_driver", cmd)
         }
     };
 
@@ -72,28 +76,23 @@ pub async fn execute_submission(
         attach_stdin: Some(true),
         attach_stdout: Some(true),
         attach_stderr: Some(true),
-        open_stdin: Some(true),    // Keep stdin open so we can pipe to it
-        stdin_once: Some(true),    // Close stdin after the first attach disconnects (signals EOF)
+        open_stdin: Some(true), // Keep stdin open so we can pipe to it
+        stdin_once: Some(true), // Close stdin after the first attach disconnects (signals EOF)
         ..Default::default()
     };
 
-    // 3. Create the Container
-    docker
-        .create_container(
-            Some(CreateContainerOptions {
-                name: container_name.clone(),
-                platform: None,
-            }),
-            container_config,
-        )
+    // 3. Create the Container (Docker auto-assigns a unique name)
+    let container = docker
+        .create_container(None::<CreateContainerOptions<String>>, container_config)
         .await?;
+    let container_id = container.id;
 
     // 4. Attach to the Container's IO Streams BEFORE starting.
     // This avoids a race condition where the container produces output
     // before our attach request is processed, causing us to miss it.
     let AttachContainerResults { mut output, input } = docker
         .attach_container(
-            &container_name,
+            &container_id,
             Some(AttachContainerOptions::<String> {
                 stdin: Some(true),
                 stdout: Some(true),
@@ -106,7 +105,7 @@ pub async fn execute_submission(
 
     // 5. NOW start the container — the attach streams are already connected.
     docker
-        .start_container(&container_name, None::<StartContainerOptions<String>>)
+        .start_container(&container_id, None::<StartContainerOptions<String>>)
         .await?;
 
     // 6. Pipe the JSON input into the container via a spawned task.
@@ -152,7 +151,7 @@ pub async fn execute_submission(
     // 8. Cleanup: Destroy the container immediately after execution.
     docker
         .remove_container(
-            &container_name,
+            &container_id,
             Some(RemoveContainerOptions {
                 force: true,
                 ..Default::default()
@@ -160,7 +159,7 @@ pub async fn execute_submission(
         )
         .await?;
 
-    println!("Container {} finished.", container_name);
+    println!("Container {} finished.", &container_id[..12]);
 
     Ok(verdict)
 }
