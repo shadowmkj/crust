@@ -11,22 +11,19 @@ const requestContextMiddleware = createMiddleware().server(async ({ next, reques
     })
 })
 
-function getCookieValue(cookieHeader: string | null, name: string) {
-}
-
 export const getAdminSessionFn = createServerFn({ method: 'GET' })
     .middleware([requestContextMiddleware])
     .handler(async ({ context }) => {
         const session = await auth.api.getSession({ headers: context.request.headers })
-    if (!session) return null
-    return {
-      user: {
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-      }
-    }
-  })
+        if (!session) return null
+        return {
+            user: {
+                id: session.user.id,
+                name: session.user.name,
+                email: session.user.email,
+            },
+        }
+    })
 
 
 // Plain serializable type for participant context (no JWTPayload extends)
@@ -71,8 +68,7 @@ export const joinContestFn = createServerFn({ method: "POST" })
 
 export const verifyParticipantFn = createServerFn({ method: 'GET' })
     .inputValidator((d: { contestCode: string }) => d)
-    .middleware([requestContextMiddleware])
-    .handler(async ({ data, context }): Promise<ParticipantSession | null> => {
+    .handler(async ({ data }): Promise<ParticipantSession | null> => {
         const token = getCookie('wecode_participant')
         if (!token) return null
 
