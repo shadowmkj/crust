@@ -5,39 +5,98 @@ use bollard::container::{
 };
 use bollard::models::HostConfig;
 use futures_util::StreamExt;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use tokio::io::AsyncWriteExt;
 
 use crate::judger;
 use crate::models::{DriverResponse, Language, TestCase, Verdict};
 
+/// Returns the root directory of the crate (where Cargo.toml lives).
+fn crate_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
+}
+
+/// Build a temporary working directory that contains:
+///   - The language-specific driver (copied from the crate's src/ tree)
+///   - The user's solution code written as the appropriate solution file
+///
+/// Returns the `TempDir` handle — dropping it cleans up the directory.
+fn prepare_workspace(
+    language: &Language,
+    solution_code: &str,
+) -> Result<tempfile::TempDir, Box<dyn std::error::Error>> {
+    let dir = tempfile::tempdir()?;
+    let root = crate_root();
+
+    match language {
+        Language::Python => {
+            // Copy driver.py from the crate's python_driver directory
+            let driver_src = root.join("src/python_driver/driver.py");
+            std::fs::copy(&driver_src, dir.path().join("driver.py"))?;
+
+            // Write the user's solution
+            let mut f = std::fs::File::create(dir.path().join("solution.py"))?;
+            f.write_all(solution_code.as_bytes())?;
+        }
+        Language::Java => {
+            // Copy Driver.java and lib/ from the crate's java_driver directory
+            let java_driver_dir = root.join("src/java_driver");
+
+            std::fs::copy(
+                java_driver_dir.join("Driver.java"),
+                dir.path().join("Driver.java"),
+            )?;
+
+            // Copy the lib/ directory with Jackson JARs
+            let lib_src = java_driver_dir.join("lib");
+            if lib_src.exists() {
+                let lib_dst = dir.path().join("lib");
+                std::fs::create_dir_all(&lib_dst)?;
+                for entry in std::fs::read_dir(&lib_src)? {
+                    let entry = entry?;
+                    std::fs::copy(entry.path(), lib_dst.join(entry.file_name()))?;
+                }
+            }
+
+            // Write the user's solution
+            let mut f = std::fs::File::create(dir.path().join("Solution.java"))?;
+            f.write_all(solution_code.as_bytes())?;
+        }
+    }
+
+    Ok(dir)
+}
+
 /// Run a single test case inside a Docker container and return the judging verdict.
 ///
-/// `driver_dir_override` — if `Some`, use this path as the driver directory
-/// instead of deriving it from `std::env::current_dir()`. This is used by
-/// tests to point at temporary fixture directories.
+/// `solution_code` — the raw source code of the user's solution.
+/// A temporary workspace is created with the driver + this code, mounted
+/// into the container, and cleaned up automatically after execution.
 pub async fn execute_submission(
     docker: &Docker,
     test_case: TestCase,
     language: &Language,
     method_name: &str,
-    driver_dir_override: Option<&str>,
+    solution_code: &str,
 ) -> Result<Verdict, Box<dyn std::error::Error>> {
+    // 1. Build a temp workspace with driver + user solution
+    let workspace = prepare_workspace(language, solution_code)?;
+    let workspace_path = workspace.path().to_string_lossy().into_owned();
 
-    // 1. Resolve language-specific container configuration
-    let current_dir = std::env::current_dir()?;
-
-    let (image, driver_subdir, cmd): (&str, &str, Vec<String>) = match language {
+    // 2. Resolve language-specific image and command
+    let (image, cmd): (&str, Vec<String>) = match language {
         Language::Python => {
             let cmd = vec![
                 "python".to_string(),
                 "driver.py".to_string(),
                 method_name.to_string(),
             ];
-            ("python:3.9-slim", "src/python_driver", cmd)
+            ("python:3.9-slim", cmd)
         }
         Language::Java => {
             // Java needs two steps: compile (javac) then run (java).
-            // The driver directory is mounted read-only at /app, so we copy
+            // The workspace is mounted read-only at /app, so we copy
             // sources to a writable /work directory, compile there, then run.
             let shell_cmd = format!(
                 "mkdir -p /work && \
@@ -48,23 +107,18 @@ pub async fn execute_submission(
                 method_name
             );
             let cmd = vec!["sh".to_string(), "-c".to_string(), shell_cmd];
-            ("openjdk:27-ea-slim", "src/java_driver", cmd)
+            ("openjdk:27-ea-slim", cmd)
         }
     };
 
-    let driver_dir = match driver_dir_override {
-        Some(path) => std::path::PathBuf::from(path),
-        None => current_dir.join(driver_subdir),
-    };
-    let driver_dir_str = driver_dir.to_string_lossy().into_owned();
-    let bind = format!("{}:/app:ro", driver_dir_str);
+    let bind = format!("{}:/app:ro", workspace_path);
 
-    // 2. Configure the Container (Strict Security Limits!)
+    // 3. Configure the Container (Strict Security Limits!)
     let host_config = HostConfig {
         memory: Some(256 * 1024 * 1024),          // 256 MB RAM limit
         memory_swap: Some(256 * 1024 * 1024),     // Disable swap
         network_mode: Some(String::from("none")), // NO INTERNET ACCESS
-        binds: Some(vec![bind]),                  // Mount driver directory as read-only
+        binds: Some(vec![bind]),                  // Mount workspace as read-only
         ..Default::default()
     };
 
@@ -76,18 +130,18 @@ pub async fn execute_submission(
         attach_stdin: Some(true),
         attach_stdout: Some(true),
         attach_stderr: Some(true),
-        open_stdin: Some(true), // Keep stdin open so we can pipe to it
-        stdin_once: Some(true), // Close stdin after the first attach disconnects (signals EOF)
+        open_stdin: Some(true),    // Keep stdin open so we can pipe to it
+        stdin_once: Some(true),    // Close stdin after the first attach disconnects (signals EOF)
         ..Default::default()
     };
 
-    // 3. Create the Container (Docker auto-assigns a unique name)
+    // 4. Create the Container (Docker auto-assigns a unique name)
     let container = docker
         .create_container(None::<CreateContainerOptions<String>>, container_config)
         .await?;
     let container_id = container.id;
 
-    // 4. Attach to the Container's IO Streams BEFORE starting.
+    // 5. Attach to the Container's IO Streams BEFORE starting.
     // This avoids a race condition where the container produces output
     // before our attach request is processed, causing us to miss it.
     let AttachContainerResults { mut output, input } = docker
@@ -103,15 +157,15 @@ pub async fn execute_submission(
         )
         .await?;
 
-    // 5. NOW start the container — the attach streams are already connected.
+    // 6. NOW start the container — the attach streams are already connected.
     docker
         .start_container(&container_id, None::<StartContainerOptions<String>>)
         .await?;
 
-    // 6. Pipe the JSON input into the container via a spawned task.
+    // 7. Pipe the JSON input into the container via a spawned task.
     // We must write stdin and read stdout concurrently to avoid deadlocks.
     // Dropping `input` after writing signals EOF to the container's stdin,
-    // which lets the Python driver's `for line in sys.stdin` loop terminate.
+    // which lets the driver's `for line in sys.stdin` loop terminate.
     let input_payload = serde_json::to_string(&test_case.input)? + "\n";
 
     tokio::spawn(async move {
@@ -125,7 +179,7 @@ pub async fn execute_submission(
         // `input` is dropped here, closing the container's stdin pipe.
     });
 
-    // 7. Read the Results from stdout and judge
+    // 8. Read the Results from stdout and judge
     let mut verdict = Verdict::NoOutput;
 
     while let Some(res) = output.next().await {
@@ -148,7 +202,7 @@ pub async fn execute_submission(
         }
     }
 
-    // 8. Cleanup: Destroy the container immediately after execution.
+    // 9. Cleanup: Destroy the container immediately after execution.
     docker
         .remove_container(
             &container_id,
@@ -159,6 +213,7 @@ pub async fn execute_submission(
         )
         .await?;
 
+    // workspace (TempDir) is dropped here, cleaning up the temp directory.
     println!("Container {} finished.", &container_id[..12]);
 
     Ok(verdict)

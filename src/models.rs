@@ -47,7 +47,7 @@ impl fmt::Display for Verdict {
 }
 
 /// Supported submission languages.
-#[derive(Debug, Clone, clap::ValueEnum)]
+#[derive(Debug, Clone, clap::ValueEnum, PartialEq, Eq)]
 pub enum Language {
     Python,
     Java,
