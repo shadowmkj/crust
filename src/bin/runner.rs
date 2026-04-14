@@ -26,7 +26,7 @@ struct Cli {
     tests: String,
 
     /// Docker socket path.
-    #[arg(long, default_value = "unix:///Users/milan/.docker/run/docker.sock")]
+    #[arg(long, default_value = "unix:///var/run/docker.sock")]
     docker_socket: String,
 
     /// Redis URL to connect to.

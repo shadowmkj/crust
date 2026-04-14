@@ -26,6 +26,7 @@ fn crate_root() -> PathBuf {
 fn prepare_workspace(language: &Language, solution_code: &str) -> Result<tempfile::TempDir> {
     let dir = tempfile::tempdir()?;
     let root = crate_root();
+    dbg!(&root);
 
     match language {
         Language::Python => {
@@ -89,6 +90,7 @@ pub async fn run_all(
     // 1. Build a temp workspace with driver + user solution
     let workspace = prepare_workspace(language, solution_code)?;
     let workspace_path = workspace.path().to_string_lossy().into_owned();
+    dbg!(&workspace,&workspace_path);
 
     // 2. Resolve language-specific image and command
     let (image, cmd): (&str, Vec<String>) = match language {

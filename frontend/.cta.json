@@ -1,0 +1,27 @@
+{
+  "projectName": "frontend",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "npm",
+  "includeExamples": false,
+  "tailwind": true,
+  "addOnOptions": {
+    "prisma": {
+      "database": "sqlite"
+    }
+  },
+  "envVarValues": {},
+  "git": false,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "biome",
+    "prisma",
+    "form",
+    "shadcn",
+    "table",
+    "better-auth",
+    "tanstack-query"
+  ]
+}
