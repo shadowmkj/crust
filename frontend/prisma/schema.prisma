@@ -79,12 +79,14 @@ model Contest {
 }
 
 model Problem {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  contestId   String
-  contest     Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  contestId       String
+  contest         Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  starterLanguage  String   @default("python")
+  starterCode     String   @default("")
+  createdAt       DateTime @default(now())
 }
 
 model Participant {

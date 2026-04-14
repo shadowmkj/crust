@@ -29,6 +29,8 @@ export type ProblemMinAggregateOutputType = {
   title: string | null
   description: string | null
   contestId: string | null
+  starterLanguage: string | null
+  starterCode: string | null
   createdAt: Date | null
 }
 
@@ -37,6 +39,8 @@ export type ProblemMaxAggregateOutputType = {
   title: string | null
   description: string | null
   contestId: string | null
+  starterLanguage: string | null
+  starterCode: string | null
   createdAt: Date | null
 }
 
@@ -45,6 +49,8 @@ export type ProblemCountAggregateOutputType = {
   title: number
   description: number
   contestId: number
+  starterLanguage: number
+  starterCode: number
   createdAt: number
   _all: number
 }
@@ -55,6 +61,8 @@ export type ProblemMinAggregateInputType = {
   title?: true
   description?: true
   contestId?: true
+  starterLanguage?: true
+  starterCode?: true
   createdAt?: true
 }
 
@@ -63,6 +71,8 @@ export type ProblemMaxAggregateInputType = {
   title?: true
   description?: true
   contestId?: true
+  starterLanguage?: true
+  starterCode?: true
   createdAt?: true
 }
 
@@ -71,6 +81,8 @@ export type ProblemCountAggregateInputType = {
   title?: true
   description?: true
   contestId?: true
+  starterLanguage?: true
+  starterCode?: true
   createdAt?: true
   _all?: true
 }
@@ -152,6 +164,8 @@ export type ProblemGroupByOutputType = {
   title: string
   description: string
   contestId: string
+  starterLanguage: string
+  starterCode: string
   createdAt: Date
   _count: ProblemCountAggregateOutputType | null
   _min: ProblemMinAggregateOutputType | null
@@ -181,6 +195,8 @@ export type ProblemWhereInput = {
   title?: Prisma.StringFilter<"Problem"> | string
   description?: Prisma.StringFilter<"Problem"> | string
   contestId?: Prisma.StringFilter<"Problem"> | string
+  starterLanguage?: Prisma.StringFilter<"Problem"> | string
+  starterCode?: Prisma.StringFilter<"Problem"> | string
   createdAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
   contest?: Prisma.XOR<Prisma.ContestScalarRelationFilter, Prisma.ContestWhereInput>
 }
@@ -190,6 +206,8 @@ export type ProblemOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  starterLanguage?: Prisma.SortOrder
+  starterCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   contest?: Prisma.ContestOrderByWithRelationInput
 }
@@ -202,6 +220,8 @@ export type ProblemWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"Problem"> | string
   description?: Prisma.StringFilter<"Problem"> | string
   contestId?: Prisma.StringFilter<"Problem"> | string
+  starterLanguage?: Prisma.StringFilter<"Problem"> | string
+  starterCode?: Prisma.StringFilter<"Problem"> | string
   createdAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
   contest?: Prisma.XOR<Prisma.ContestScalarRelationFilter, Prisma.ContestWhereInput>
 }, "id">
@@ -211,6 +231,8 @@ export type ProblemOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  starterLanguage?: Prisma.SortOrder
+  starterCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.ProblemCountOrderByAggregateInput
   _max?: Prisma.ProblemMaxOrderByAggregateInput
@@ -225,6 +247,8 @@ export type ProblemScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"Problem"> | string
   description?: Prisma.StringWithAggregatesFilter<"Problem"> | string
   contestId?: Prisma.StringWithAggregatesFilter<"Problem"> | string
+  starterLanguage?: Prisma.StringWithAggregatesFilter<"Problem"> | string
+  starterCode?: Prisma.StringWithAggregatesFilter<"Problem"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Problem"> | Date | string
 }
 
@@ -232,6 +256,8 @@ export type ProblemCreateInput = {
   id?: string
   title: string
   description: string
+  starterLanguage?: string
+  starterCode?: string
   createdAt?: Date | string
   contest: Prisma.ContestCreateNestedOneWithoutProblemsInput
 }
@@ -241,6 +267,8 @@ export type ProblemUncheckedCreateInput = {
   title: string
   description: string
   contestId: string
+  starterLanguage?: string
+  starterCode?: string
   createdAt?: Date | string
 }
 
@@ -248,6 +276,8 @@ export type ProblemUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  starterLanguage?: Prisma.StringFieldUpdateOperationsInput | string
+  starterCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contest?: Prisma.ContestUpdateOneRequiredWithoutProblemsNestedInput
 }
@@ -257,6 +287,8 @@ export type ProblemUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   contestId?: Prisma.StringFieldUpdateOperationsInput | string
+  starterLanguage?: Prisma.StringFieldUpdateOperationsInput | string
+  starterCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -265,6 +297,8 @@ export type ProblemCreateManyInput = {
   title: string
   description: string
   contestId: string
+  starterLanguage?: string
+  starterCode?: string
   createdAt?: Date | string
 }
 
@@ -272,6 +306,8 @@ export type ProblemUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  starterLanguage?: Prisma.StringFieldUpdateOperationsInput | string
+  starterCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -280,6 +316,8 @@ export type ProblemUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   contestId?: Prisma.StringFieldUpdateOperationsInput | string
+  starterLanguage?: Prisma.StringFieldUpdateOperationsInput | string
+  starterCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -298,6 +336,8 @@ export type ProblemCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  starterLanguage?: Prisma.SortOrder
+  starterCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -306,6 +346,8 @@ export type ProblemMaxOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  starterLanguage?: Prisma.SortOrder
+  starterCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -314,6 +356,8 @@ export type ProblemMinOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  starterLanguage?: Prisma.SortOrder
+  starterCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -363,6 +407,8 @@ export type ProblemCreateWithoutContestInput = {
   id?: string
   title: string
   description: string
+  starterLanguage?: string
+  starterCode?: string
   createdAt?: Date | string
 }
 
@@ -370,6 +416,8 @@ export type ProblemUncheckedCreateWithoutContestInput = {
   id?: string
   title: string
   description: string
+  starterLanguage?: string
+  starterCode?: string
   createdAt?: Date | string
 }
 
@@ -406,6 +454,8 @@ export type ProblemScalarWhereInput = {
   title?: Prisma.StringFilter<"Problem"> | string
   description?: Prisma.StringFilter<"Problem"> | string
   contestId?: Prisma.StringFilter<"Problem"> | string
+  starterLanguage?: Prisma.StringFilter<"Problem"> | string
+  starterCode?: Prisma.StringFilter<"Problem"> | string
   createdAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
 }
 
@@ -413,6 +463,8 @@ export type ProblemCreateManyContestInput = {
   id?: string
   title: string
   description: string
+  starterLanguage?: string
+  starterCode?: string
   createdAt?: Date | string
 }
 
@@ -420,6 +472,8 @@ export type ProblemUpdateWithoutContestInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  starterLanguage?: Prisma.StringFieldUpdateOperationsInput | string
+  starterCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -427,6 +481,8 @@ export type ProblemUncheckedUpdateWithoutContestInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  starterLanguage?: Prisma.StringFieldUpdateOperationsInput | string
+  starterCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -434,6 +490,8 @@ export type ProblemUncheckedUpdateManyWithoutContestInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  starterLanguage?: Prisma.StringFieldUpdateOperationsInput | string
+  starterCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -444,6 +502,8 @@ export type ProblemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   title?: boolean
   description?: boolean
   contestId?: boolean
+  starterLanguage?: boolean
+  starterCode?: boolean
   createdAt?: boolean
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["problem"]>
@@ -453,6 +513,8 @@ export type ProblemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   title?: boolean
   description?: boolean
   contestId?: boolean
+  starterLanguage?: boolean
+  starterCode?: boolean
   createdAt?: boolean
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["problem"]>
@@ -462,6 +524,8 @@ export type ProblemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   title?: boolean
   description?: boolean
   contestId?: boolean
+  starterLanguage?: boolean
+  starterCode?: boolean
   createdAt?: boolean
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["problem"]>
@@ -471,10 +535,12 @@ export type ProblemSelectScalar = {
   title?: boolean
   description?: boolean
   contestId?: boolean
+  starterLanguage?: boolean
+  starterCode?: boolean
   createdAt?: boolean
 }
 
-export type ProblemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "contestId" | "createdAt", ExtArgs["result"]["problem"]>
+export type ProblemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "contestId" | "starterLanguage" | "starterCode" | "createdAt", ExtArgs["result"]["problem"]>
 export type ProblemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
 }
@@ -495,6 +561,8 @@ export type $ProblemPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     title: string
     description: string
     contestId: string
+    starterLanguage: string
+    starterCode: string
     createdAt: Date
   }, ExtArgs["result"]["problem"]>
   composites: {}
@@ -924,6 +992,8 @@ export interface ProblemFieldRefs {
   readonly title: Prisma.FieldRef<"Problem", 'String'>
   readonly description: Prisma.FieldRef<"Problem", 'String'>
   readonly contestId: Prisma.FieldRef<"Problem", 'String'>
+  readonly starterLanguage: Prisma.FieldRef<"Problem", 'String'>
+  readonly starterCode: Prisma.FieldRef<"Problem", 'String'>
   readonly createdAt: Prisma.FieldRef<"Problem", 'DateTime'>
 }
     

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { prisma } from '#/db'
 import { Button } from '#/components/ui/button'
@@ -16,6 +16,13 @@ const getContests = createServerFn({ method: 'GET' }).handler(async () => {
     })
 })
 
+const deleteContestFn = createServerFn({ method: 'POST' })
+    .inputValidator((d: { contestId: string }) => d)
+    .handler(async ({ data }) => {
+        await prisma.contest.delete({ where: { id: data.contestId } })
+        return { ok: true }
+    })
+
 export const Route = createFileRoute('/admin/')({
   component: AdminDashboard,
   loader: async () => await getContests(),
@@ -23,6 +30,17 @@ export const Route = createFileRoute('/admin/')({
 
 function AdminDashboard() {
   const contests = Route.useLoaderData()
+    const router = useRouter()
+
+    const handleDeleteContest = async (contestId: string) => {
+        if (typeof window !== 'undefined') {
+            const confirmed = window.confirm('Delete this contest? This removes all problems and participants.')
+            if (!confirmed) return
+        }
+
+        await deleteContestFn({ data: { contestId } })
+        await router.invalidate()
+    }
 
   return (
     <div className="space-y-6">
@@ -51,11 +69,28 @@ function AdminDashboard() {
                         <span>{contest._count.problems} Problems</span>
                         <span>{contest._count.participants} Participants</span>
                     </div>
-                    <Link to="/admin/contests/$contestId" params={{ contestId: contest.id }} className="block w-full">
-                        <Button variant="outline" className="w-full border-slate-700 text-slate-100 hover:bg-slate-800 hover:text-white">
-                            Manage Contest
-                        </Button>
-                    </Link>
+                                        <div className="space-y-2">
+                                            <Link to="/admin/contests/$contestId" params={{ contestId: contest.id }} className="block w-full">
+                                                    <Button variant="outline" className="w-full border-slate-700 text-slate-100 hover:bg-slate-800 hover:text-white">
+                                                            Manage Contest
+                                                    </Button>
+                                            </Link>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <Link to="/admin/contests/$contestId/edit" params={{ contestId: contest.id }}>
+                                                    <Button variant="outline" className="w-full border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white">
+                                                        Edit
+                                                    </Button>
+                                                </Link>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => handleDeleteContest(contest.id)}
+                                                    className="w-full border-red-700 text-red-300 hover:bg-red-950/60 hover:text-red-200"
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </div>
+                                        </div>
                 </div>
             ))
         )}

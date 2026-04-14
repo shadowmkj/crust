@@ -1038,6 +1038,8 @@ export const ProblemScalarFieldEnum = {
   title: 'title',
   description: 'description',
   contestId: 'contestId',
+  starterLanguage: 'starterLanguage',
+  starterCode: 'starterCode',
   createdAt: 'createdAt'
 } as const
 

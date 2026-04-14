@@ -4,17 +4,60 @@ import { prisma } from '#/db'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '#/components/ui/select'
 import { Textarea } from '#/components/ui/textarea'
 import { useState } from 'react'
 
+type LanguageId = 'c' | 'cpp' | 'java' | 'python'
+
+const STARTER_SNIPPETS: Record<LanguageId, string> = {
+    c: `#include <stdio.h>
+
+int main(void) {
+        return 0;
+}`,
+    cpp: `#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+        ios::sync_with_stdio(false);
+        cin.tie(nullptr);
+        return 0;
+}`,
+    java: `import java.io.*;
+import java.util.*;
+
+public class Main {
+        public static void main(String[] args) throws Exception {
+        }
+}`,
+    python: `import sys
+
+
+def main():
+        pass
+
+
+if __name__ == '__main__':
+        main()`,
+}
+
 const createProblemFn = createServerFn({ method: "POST" })
-    .inputValidator((d: { contestId: string; title: string; description: string }) => d)
+        .inputValidator((d: { contestId: string; title: string; description: string; starterLanguage: LanguageId; starterCode: string }) => d)
     .handler(async ({ data }) => {
         const problem = await prisma.problem.create({
             data: {
                 title: data.title,
                 description: data.description,
                 contestId: data.contestId,
+                                starterLanguage: data.starterLanguage,
+                                starterCode: data.starterCode,
             }
         })
         return problem
@@ -29,6 +72,8 @@ function CreateProblem() {
   const navigate = useNavigate()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+    const [starterLanguage, setStarterLanguage] = useState<LanguageId>('python')
+    const [starterCode, setStarterCode] = useState(STARTER_SNIPPETS.python)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -37,7 +82,7 @@ function CreateProblem() {
     setLoading(true)
     setError('')
     try {
-        await createProblemFn({ data: { title, description, contestId } })
+        await createProblemFn({ data: { title, description, contestId, starterLanguage, starterCode } })
         navigate({ to: '/admin/contests/$contestId', params: { contestId } })
     } catch (err: any) {
         setError(err.message)
@@ -76,6 +121,45 @@ function CreateProblem() {
                    className="bg-slate-950 border-slate-800 min-h-[200px] focus-visible:ring-indigo-500"
                />
            </div>
+                     <div className="grid gap-4 md:grid-cols-[12rem_minmax(0,1fr)]">
+                             <div className="space-y-2">
+                                     <Label className="text-slate-300">Starter Language</Label>
+                                     <Select
+                                         value={starterLanguage}
+                                         onValueChange={(value) => {
+                                             const nextLanguage = value as LanguageId
+                                             setStarterLanguage(nextLanguage)
+                                             setStarterCode((current) => {
+                                                 if (!current.trim() || current === STARTER_SNIPPETS[starterLanguage]) {
+                                                     return STARTER_SNIPPETS[nextLanguage]
+                                                 }
+
+                                                 return current
+                                             })
+                                         }}
+                                     >
+                                         <SelectTrigger className="w-full bg-slate-950 border-slate-800 text-slate-100">
+                                             <SelectValue placeholder="Choose language" />
+                                         </SelectTrigger>
+                                         <SelectContent>
+                                             <SelectItem value="c">C</SelectItem>
+                                             <SelectItem value="cpp">C++</SelectItem>
+                                             <SelectItem value="java">Java</SelectItem>
+                                             <SelectItem value="python">Python</SelectItem>
+                                         </SelectContent>
+                                     </Select>
+                             </div>
+                             <div className="space-y-2">
+                                     <Label htmlFor="starterCode" className="text-slate-300">Starter Code</Label>
+                                     <Textarea
+                                         id="starterCode"
+                                         value={starterCode}
+                                         onChange={(e) => setStarterCode(e.target.value)}
+                                         placeholder="Code shown to participants when they open the problem"
+                                         className="min-h-[260px] bg-slate-950 border-slate-800 font-mono text-sm focus-visible:ring-indigo-500"
+                                     />
+                             </div>
+                     </div>
            {error && <p className="text-red-400 font-medium text-sm">{error}</p>}
            <div className="flex gap-4">
                 <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
